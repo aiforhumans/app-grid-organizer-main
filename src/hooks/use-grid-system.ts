@@ -70,6 +70,8 @@ export function useGridSystem() {
           return { width: 260, height: 180 }
         case 'counter':
           return { width: 220, height: 140 }
+        case 'lm-studio':
+          return { width: 320, height: 400 }
         default:
           return { width: 280, height: 200 }
       }
@@ -279,6 +281,8 @@ export function useGridSystem() {
         return [{ key: 'baseText', label: 'Base Text' }]
       case 'notes':
         return [{ key: 'text', label: 'Text' }]
+      case 'lm-studio':
+        return [{ key: 'prompt', label: 'Prompt' }]
       default:
         return []
     }
@@ -350,6 +354,8 @@ export function useGridSystem() {
         return widget.data?.text || ''
       case 'timer':
         return widget.data?.timeLeft || 0
+      case 'lm-studio':
+        return widget.data?.response || ''
       default:
         return ''
     }

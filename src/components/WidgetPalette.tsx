@@ -4,7 +4,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { 
   Plus, Calculator, Note, Timer, Hash, 
   TextT, TextAlignLeft, Quotes, ArrowsClockwise, 
-  MagicWand, PlusCircle, MinusCircle, CaretDown, CaretRight
+  MagicWand, PlusCircle, MinusCircle, CaretDown, CaretRight, Robot
 } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { GridPosition } from '@/hooks/use-grid-system'
@@ -89,6 +89,18 @@ const WIDGET_CATEGORIES = [
         icon: Quotes, 
         name: 'Prompt Template',
         description: 'Template with variables for prompts'
+      }
+    ]
+  },
+  {
+    name: 'AI',
+    expanded: false,
+    widgets: [
+      { 
+        type: 'lm-studio', 
+        icon: Robot, 
+        name: 'LM Studio',
+        description: 'Connect to local LLM models'
       }
     ]
   }

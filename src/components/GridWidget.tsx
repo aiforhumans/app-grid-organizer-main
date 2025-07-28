@@ -17,6 +17,7 @@ import { RemoveTextWidget } from './widgets/RemoveTextWidget'
 import { TextReplaceWidget } from './widgets/TextReplaceWidget'
 import { TextTransformWidget } from './widgets/TextTransformWidget'
 import { PromptTemplateWidget } from './widgets/PromptTemplateWidget'
+import { LMStudioWidget } from './widgets/LMStudioWidget'
 
 interface GridWidgetProps {
   widget: Widget
@@ -78,6 +79,8 @@ function GridWidgetComponent({
         return TextTransformWidget
       case 'prompt-template':
         return PromptTemplateWidget
+      case 'lm-studio':
+        return LMStudioWidget
       default:
         return () => <div className="p-4 text-muted-foreground">Unknown widget</div>
     }
