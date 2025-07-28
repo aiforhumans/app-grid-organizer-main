@@ -7,9 +7,10 @@ interface TimerWidgetProps {
   widget: Widget
   updateWidget: (id: string, updates: Partial<Widget>) => void
   autoResizeWidget?: (contentHeight: number, contentWidth?: number) => void
+  connectedInputs?: Record<string, any>
 }
 
-export function TimerWidget({ widget, updateWidget }: TimerWidgetProps) {
+export function TimerWidget({ widget, updateWidget, connectedInputs = {} }: TimerWidgetProps) {
   const [minutes, setMinutes] = useState(5)
   const [seconds, setSeconds] = useState(0)
   const [isRunning, setIsRunning] = useState(false)

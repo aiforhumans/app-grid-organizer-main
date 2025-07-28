@@ -7,9 +7,10 @@ interface TextReplaceWidgetProps {
   widget: Widget
   updateWidget: (id: string, updates: Partial<Widget>) => void
   autoResizeWidget?: (contentHeight: number, contentWidth?: number) => void
+  connectedInputs?: Record<string, any>
 }
 
-export function TextReplaceWidget({ widget, updateWidget }: TextReplaceWidgetProps) {
+export function TextReplaceWidget({ widget, updateWidget, connectedInputs = {} }: TextReplaceWidgetProps) {
   const [baseText, setBaseText] = useState(widget.data?.baseText || '')
   const [searchText, setSearchText] = useState(widget.data?.searchText || '')
   const [replaceText, setReplaceText] = useState(widget.data?.replaceText || '')

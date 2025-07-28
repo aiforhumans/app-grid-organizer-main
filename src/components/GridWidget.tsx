@@ -29,6 +29,7 @@ interface GridWidgetProps {
   updateWidget: (id: string, updates: Partial<Widget>) => void
   autoResizeWidget?: (id: string, contentHeight: number, contentWidth?: number) => void
   removeWidget: (id: string) => void
+  getConnectedInputs?: (widgetId: string) => Record<string, any>
 }
 
 function GridWidgetComponent({ 
@@ -41,7 +42,8 @@ function GridWidgetComponent({
   startDrag,
   updateWidget,
   autoResizeWidget,
-  removeWidget
+  removeWidget,
+  getConnectedInputs
 }: GridWidgetProps) {
   // Remove the useGridSystem call to prevent circular dependencies
 
@@ -208,6 +210,7 @@ function GridWidgetComponent({
           widget={widget}
           updateWidget={updateWidget}
           autoResizeWidget={autoResizeWidget ? (contentHeight: number, contentWidth?: number) => autoResizeWidget(widget.id, contentHeight, contentWidth) : undefined}
+          connectedInputs={getConnectedInputs ? getConnectedInputs(widget.id) : {}}
         />
       </div>
 

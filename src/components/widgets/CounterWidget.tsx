@@ -7,9 +7,10 @@ interface CounterWidgetProps {
   widget: Widget
   updateWidget: (id: string, updates: Partial<Widget>) => void
   autoResizeWidget?: (contentHeight: number, contentWidth?: number) => void
+  connectedInputs?: Record<string, any>
 }
 
-export function CounterWidget({ widget, updateWidget }: CounterWidgetProps) {
+export function CounterWidget({ widget, updateWidget, connectedInputs = {} }: CounterWidgetProps) {
   const [count, setCount] = useState(widget.data?.count || 0)
   const lastSavedCount = useRef(widget.data?.count || 0)
 

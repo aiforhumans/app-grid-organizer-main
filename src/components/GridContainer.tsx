@@ -7,6 +7,7 @@ import { ConnectionInfo } from './ConnectionInfo'
 import { ConnectionStats } from './ConnectionStats'
 import { WidgetPalette } from './WidgetPalette'
 import { TempConnectionLine } from './ConnectionCreator'
+import { ConnectionFieldSelector } from './ConnectionFieldSelector'
 
 export function GridContainer() {
   const {
@@ -23,6 +24,9 @@ export function GridContainer() {
     removeWidget,
     addConnection,
     removeConnection,
+    getConnectedInputs,
+    getWidgetInputFields,
+    getPromptTemplateInputFields,
     startDrag,
     GRID_SIZE
   } = useGridSystem()
@@ -38,6 +42,14 @@ export function GridContainer() {
   const [currentMousePos, setCurrentMousePos] = useState<{ x: number; y: number } | null>(null)
   const [connectionTargetWidget, setConnectionTargetWidget] = useState<string | null>(null)
   
+  // Field selection state
+  const [showFieldSelector, setShowFieldSelector] = useState(false)
+  const [fieldSelectorData, setFieldSelectorData] = useState<{
+    position: { x: number; y: number }
+    targetWidget: any
+    availableFields: Array<{ key: string; label: string }>
+  } | null>(null)
+  
   // Connection info state
   const [selectedConnection, setSelectedConnection] = useState<{
     connection: Connection
@@ -52,22 +64,57 @@ export function GridContainer() {
 
   const handleConnectionEnd = useCallback((widgetId: string, port: string) => {
     if (isCreatingConnection && connectionStart && widgetId !== connectionStart.widgetId) {
-      addConnection(
-        { widgetId: connectionStart.widgetId, port: connectionStart.port },
-        { widgetId, port }
-      )
+      const targetWidget = widgets.find(w => w.id === widgetId)
+      if (!targetWidget) return
+      
+      // Get available fields for this widget
+      let availableFields = getWidgetInputFields(targetWidget.type)
+      
+      // For prompt template, get dynamic fields
+      if (targetWidget.type === 'prompt-template') {
+        availableFields = getPromptTemplateInputFields(targetWidget)
+      }
+      
+      if (availableFields.length === 0) {
+        // No fields available, cancel connection
+        handleConnectionCancel()
+        return
+      }
+      
+      if (availableFields.length === 1) {
+        // Only one field, connect directly
+        addConnection(
+          { widgetId: connectionStart.widgetId, port: connectionStart.port },
+          { widgetId, port: availableFields[0].key }
+        )
+        handleConnectionCancel()
+      } else {
+        // Multiple fields, show selector
+        const rect = gridRef.current?.getBoundingClientRect()
+        const targetPosition = {
+          x: (rect?.left || 0) + targetWidget.position.x + targetWidget.position.width / 2,
+          y: (rect?.top || 0) + targetWidget.position.y + targetWidget.position.height / 2
+        }
+        
+        setFieldSelectorData({
+          position: targetPosition,
+          targetWidget,
+          availableFields
+        })
+        setShowFieldSelector(true)
+      }
+    } else {
+      handleConnectionCancel()
     }
-    setIsCreatingConnection(false)
-    setConnectionStart(null)
-    setCurrentMousePos(null)
-    setConnectionTargetWidget(null)
-  }, [isCreatingConnection, connectionStart, addConnection])
+  }, [isCreatingConnection, connectionStart, widgets, getWidgetInputFields, getPromptTemplateInputFields, addConnection, gridRef])
 
   const handleConnectionCancel = useCallback(() => {
     setIsCreatingConnection(false)
     setConnectionStart(null)
     setCurrentMousePos(null)
     setConnectionTargetWidget(null)
+    setShowFieldSelector(false)
+    setFieldSelectorData(null)
   }, [])
 
   const handleShowConnectionInfo = useCallback((connection: Connection, position: { x: number; y: number }) => {
@@ -76,6 +123,20 @@ export function GridContainer() {
 
   const handleCloseConnectionInfo = useCallback(() => {
     setSelectedConnection(null)
+  }, [])
+
+  const handleFieldSelect = useCallback((fieldKey: string) => {
+    if (connectionStart && fieldSelectorData) {
+      addConnection(
+        { widgetId: connectionStart.widgetId, port: connectionStart.port },
+        { widgetId: fieldSelectorData.targetWidget.id, port: fieldKey }
+      )
+    }
+    handleConnectionCancel()
+  }, [connectionStart, fieldSelectorData, addConnection])
+
+  const handleFieldSelectorCancel = useCallback(() => {
+    handleConnectionCancel()
   }, [])
 
   const handleMouseMove = useCallback((event: MouseEvent) => {
@@ -107,10 +168,11 @@ export function GridContainer() {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Escape key to cancel connection creation or close connection info
       if (event.key === 'Escape') {
-        if (isCreatingConnection) {
+        if (showFieldSelector) {
+          handleFieldSelectorCancel()
+        } else if (isCreatingConnection) {
           handleConnectionCancel()
-        }
-        if (selectedConnection) {
+        } else if (selectedConnection) {
           handleCloseConnectionInfo()
         }
       }
@@ -124,7 +186,7 @@ export function GridContainer() {
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isCreatingConnection, selectedConnection, handleConnectionCancel, handleCloseConnectionInfo, removeConnection])
+  }, [isCreatingConnection, selectedConnection, showFieldSelector, handleConnectionCancel, handleCloseConnectionInfo, handleFieldSelectorCancel, removeConnection])
 
   // Removed duplicate drag event listeners - these are now handled in use-grid-system.ts
 
@@ -192,6 +254,7 @@ export function GridContainer() {
                   updateWidget={updateWidget}
                   autoResizeWidget={autoResizeWidget}
                   removeWidget={removeWidget}
+                  getConnectedInputs={getConnectedInputs}
                 />
               </div>
             ))}
@@ -249,6 +312,17 @@ export function GridContainer() {
                 position={selectedConnection.position}
                 onRemove={removeConnection}
                 onClose={handleCloseConnectionInfo}
+              />
+            )}
+
+            {/* Connection field selector */}
+            {showFieldSelector && fieldSelectorData && (
+              <ConnectionFieldSelector
+                position={fieldSelectorData.position}
+                targetWidget={fieldSelectorData.targetWidget}
+                availableFields={fieldSelectorData.availableFields}
+                onSelectField={handleFieldSelect}
+                onCancel={handleFieldSelectorCancel}
               />
             )}
           </div>

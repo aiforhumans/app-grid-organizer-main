@@ -7,9 +7,10 @@ interface TextTransformWidgetProps {
   widget: Widget
   updateWidget: (id: string, updates: Partial<Widget>) => void
   autoResizeWidget?: (contentHeight: number, contentWidth?: number) => void
+  connectedInputs?: Record<string, any>
 }
 
-export function TextTransformWidget({ widget, updateWidget }: TextTransformWidgetProps) {
+export function TextTransformWidget({ widget, updateWidget, connectedInputs = {} }: TextTransformWidgetProps) {
   const [baseText, setBaseText] = useState(widget.data?.baseText || '')
   const [transform, setTransform] = useState(widget.data?.transform || 'none')
   const [result, setResult] = useState('')

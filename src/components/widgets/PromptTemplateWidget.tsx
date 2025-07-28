@@ -7,9 +7,10 @@ interface PromptTemplateWidgetProps {
   widget: Widget
   updateWidget: (id: string, updates: Partial<Widget>) => void
   autoResizeWidget?: (contentHeight: number, contentWidth?: number) => void
+  connectedInputs?: Record<string, any>
 }
 
-export function PromptTemplateWidget({ widget, updateWidget, autoResizeWidget }: PromptTemplateWidgetProps) {
+export function PromptTemplateWidget({ widget, updateWidget, autoResizeWidget, connectedInputs = {} }: PromptTemplateWidgetProps) {
   const [template, setTemplate] = useState(widget.data?.template || 'You are a helpful assistant. {context}\n\nPlease help with: {task}')
   const [variables, setVariables] = useState<Record<string, string>>(widget.data?.variables || {})
   const [result, setResult] = useState('')
@@ -39,10 +40,12 @@ export function PromptTemplateWidget({ widget, updateWidget, autoResizeWidget }:
   useEffect(() => {
     let filled = template
     Object.entries(variables).forEach(([key, value]) => {
-      filled = filled.replace(new RegExp(`\\{${key}\\}`, 'g'), value)
+      // Use connected input value if available, otherwise use local value
+      const effectiveValue = connectedInputs[key] !== undefined ? connectedInputs[key] : value
+      filled = filled.replace(new RegExp(`\\{${key}\\}`, 'g'), effectiveValue)
     })
     setResult(filled)
-  }, [template, variables])
+  }, [template, variables, connectedInputs])
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -87,17 +90,31 @@ export function PromptTemplateWidget({ widget, updateWidget, autoResizeWidget }:
       {Object.keys(variables).length > 0 && (
         <div className="space-y-2">
           <Label className="text-xs font-medium">Variables</Label>
-          {Object.entries(variables).map(([key, value]) => (
+          {Object.entries(variables).map(([key, value]) => {
+            const hasConnectedInput = connectedInputs[key] !== undefined
+            const effectiveValue = hasConnectedInput ? connectedInputs[key] : value
+            
+            return (
             <div key={key} className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{key}</Label>
+              <Label className="text-xs text-muted-foreground flex items-center gap-2">
+                {key}
+                {hasConnectedInput && (
+                  <span className="text-xs bg-accent text-accent-foreground px-1 py-0.5 rounded">
+                    Connected
+                  </span>
+                )}
+              </Label>
               <Textarea
                 placeholder={`Value for {${key}}...`}
-                value={value}
+                value={effectiveValue}
                 onChange={(e) => updateVariable(key, e.target.value)}
                 className="h-12 text-xs resize-none"
+                disabled={hasConnectedInput}
+                title={hasConnectedInput ? "This field is receiving input from a connected widget" : undefined}
               />
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
       

@@ -9,9 +9,10 @@ interface CombineTextWidgetProps {
   widget: Widget
   updateWidget: (id: string, updates: Partial<Widget>) => void
   autoResizeWidget?: (contentHeight: number, contentWidth?: number) => void
+  connectedInputs?: Record<string, any>
 }
 
-export function CombineTextWidget({ widget, updateWidget, autoResizeWidget }: CombineTextWidgetProps) {
+export function CombineTextWidget({ widget, updateWidget, autoResizeWidget, connectedInputs = {} }: CombineTextWidgetProps) {
   const [inputs, setInputs] = useState<string[]>(widget.data?.inputs || ['', ''])
   const [separator, setSeparator] = useState(widget.data?.separator || ' ')
   const [result, setResult] = useState('')

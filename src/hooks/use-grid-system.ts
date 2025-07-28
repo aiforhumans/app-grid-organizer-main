@@ -249,6 +249,112 @@ export function useGridSystem() {
     setConnections(current => current.filter(conn => conn.id !== id))
   }, [setConnections])
 
+  // Get available input fields for a widget type
+  const getWidgetInputFields = useCallback((widgetType: string) => {
+    switch (widgetType) {
+      case 'text-field':
+        return [{ key: 'text', label: 'Value' }]
+      case 'prompt-template':
+        // Return dynamic variables based on template
+        return []
+      case 'combine-text':
+        return [{ key: 'input', label: 'Input' }]
+      case 'add-text':
+        return [
+          { key: 'baseText', label: 'Base Text' },
+          { key: 'addText', label: 'Text to Add' }
+        ]
+      case 'remove-text':
+        return [
+          { key: 'baseText', label: 'Base Text' },
+          { key: 'removeText', label: 'Text to Remove' }
+        ]
+      case 'text-replace':
+        return [
+          { key: 'baseText', label: 'Base Text' },
+          { key: 'searchText', label: 'Search Text' },
+          { key: 'replaceText', label: 'Replace Text' }
+        ]
+      case 'text-transform':
+        return [{ key: 'baseText', label: 'Base Text' }]
+      case 'notes':
+        return [{ key: 'text', label: 'Text' }]
+      default:
+        return []
+    }
+  }, [])
+
+  // Get dynamic input fields for prompt template widget  
+  const getPromptTemplateInputFields = useCallback((widget: Widget) => {
+    if (widget.type !== 'prompt-template') return []
+    
+    const template = widget.data?.template || ''
+    const matches = template.match(/\{([^}]+)\}/g)
+    const fields: { key: string; label: string }[] = []
+    
+    if (matches) {
+      matches.forEach(match => {
+        const varName = match.slice(1, -1)
+        if (!fields.find(f => f.key === varName)) {
+          fields.push({ key: varName, label: varName })
+        }
+      })
+    }
+    
+    return fields
+  }, [])
+
+  // Get connected values for a widget
+  const getConnectedInputs = useCallback((widgetId: string) => {
+    const connectedInputs: Record<string, any> = {}
+    
+    // Find all connections where this widget is the target
+    const incomingConnections = connections.filter(conn => conn.to.widgetId === widgetId)
+    
+    for (const connection of incomingConnections) {
+      const sourceWidget = widgets.find(w => w.id === connection.from.widgetId)
+      if (sourceWidget) {
+        // Get the output value from the source widget based on its type
+        let outputValue = getWidgetOutputValue(sourceWidget)
+        
+        // Map the output to the target field
+        connectedInputs[connection.to.port] = outputValue
+      }
+    }
+    
+    return connectedInputs
+  }, [connections, widgets])
+  
+  // Extract output value from a widget based on its type and data
+  const getWidgetOutputValue = useCallback((widget: Widget) => {
+    switch (widget.type) {
+      case 'text-field':
+        return widget.data?.text || ''
+      case 'combine-text':
+        return widget.data?.result || ''
+      case 'add-text':
+        return widget.data?.result || ''
+      case 'remove-text':
+        return widget.data?.result || ''
+      case 'text-replace':
+        return widget.data?.result || ''
+      case 'text-transform':
+        return widget.data?.result || ''
+      case 'prompt-template':
+        return widget.data?.result || ''
+      case 'calculator':
+        return widget.data?.result || '0'
+      case 'counter':
+        return widget.data?.count || 0
+      case 'notes':
+        return widget.data?.text || ''
+      case 'timer':
+        return widget.data?.timeLeft || 0
+      default:
+        return ''
+    }
+  }, [])
+
   // Compute widgets with temporary drag position
   const displayWidgets = useMemo(() => {
     if (!isDragging || !draggedWidget || !tempPosition) {
@@ -282,6 +388,9 @@ export function useGridSystem() {
     endDrag,
     addConnection,
     removeConnection,
+    getConnectedInputs,
+    getWidgetInputFields,
+    getPromptTemplateInputFields,
     GRID_SIZE,
     CELL_SIZE
   }

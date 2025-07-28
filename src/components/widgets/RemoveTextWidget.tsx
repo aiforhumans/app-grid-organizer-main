@@ -7,9 +7,10 @@ interface RemoveTextWidgetProps {
   widget: Widget
   updateWidget: (id: string, updates: Partial<Widget>) => void
   autoResizeWidget?: (contentHeight: number, contentWidth?: number) => void
+  connectedInputs?: Record<string, any>
 }
 
-export function RemoveTextWidget({ widget, updateWidget }: RemoveTextWidgetProps) {
+export function RemoveTextWidget({ widget, updateWidget, connectedInputs = {} }: RemoveTextWidgetProps) {
   const [baseText, setBaseText] = useState(widget.data?.baseText || '')
   const [removeText, setRemoveText] = useState(widget.data?.removeText || '')
   const [mode, setMode] = useState(widget.data?.mode || 'all')

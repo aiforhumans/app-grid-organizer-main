@@ -7,9 +7,10 @@ interface AddTextWidgetProps {
   widget: Widget
   updateWidget: (id: string, updates: Partial<Widget>) => void
   autoResizeWidget?: (contentHeight: number, contentWidth?: number) => void
+  connectedInputs?: Record<string, any>
 }
 
-export function AddTextWidget({ widget, updateWidget }: AddTextWidgetProps) {
+export function AddTextWidget({ widget, updateWidget, connectedInputs = {} }: AddTextWidgetProps) {
   const [baseText, setBaseText] = useState(widget.data?.baseText || '')
   const [addText, setAddText] = useState(widget.data?.addText || '')
   const [position, setPosition] = useState(widget.data?.position || 'end')

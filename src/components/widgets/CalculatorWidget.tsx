@@ -6,9 +6,10 @@ interface CalculatorWidgetProps {
   widget: Widget
   updateWidget: (id: string, updates: Partial<Widget>) => void
   autoResizeWidget?: (contentHeight: number, contentWidth?: number) => void
+  connectedInputs?: Record<string, any>
 }
 
-export function CalculatorWidget({ widget, updateWidget }: CalculatorWidgetProps) {
+export function CalculatorWidget({ widget, updateWidget, connectedInputs = {} }: CalculatorWidgetProps) {
   const [display, setDisplay] = useState('0')
   const [operation, setOperation] = useState<string | null>(null)
   const [previousValue, setPreviousValue] = useState<number | null>(null)

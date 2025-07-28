@@ -6,9 +6,10 @@ interface NotesWidgetProps {
   widget: Widget
   updateWidget: (id: string, updates: Partial<Widget>) => void
   autoResizeWidget?: (contentHeight: number, contentWidth?: number) => void
+  connectedInputs?: Record<string, any>
 }
 
-export function NotesWidget({ widget, updateWidget }: NotesWidgetProps) {
+export function NotesWidget({ widget, updateWidget, connectedInputs = {} }: NotesWidgetProps) {
   const [text, setText] = useState(widget.data?.text || '')
   const lastSavedText = useRef(widget.data?.text || '')
 
