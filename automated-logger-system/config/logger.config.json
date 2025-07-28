@@ -1,0 +1,29 @@
+{
+  "logLevel": "INFO",
+  "transports": [
+    {
+      "type": "Console",
+      "options": {
+        "enabled": true,
+        "level": "DEBUG"
+      }
+    },
+    {
+      "type": "File",
+      "options": {
+        "enabled": true,
+        "filename": "logs/app.log",
+        "level": "ERROR"
+      }
+    },
+    {
+      "type": "Database",
+      "options": {
+        "enabled": false,
+        "connectionString": "mongodb://localhost:27017/logs",
+        "level": "WARN"
+      }
+    }
+  ],
+  "format": "Json"
+}

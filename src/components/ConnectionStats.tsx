@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useMemo, memo } from 'react'
 import { Connection } from '@/hooks/use-grid-system'
 
 interface ConnectionStatsProps {
@@ -7,14 +7,8 @@ interface ConnectionStatsProps {
   className?: string
 }
 
-export function ConnectionStats({ connections, widgets, className }: ConnectionStatsProps) {
-  const [stats, setStats] = useState({
-    totalConnections: 0,
-    connectedWidgets: 0,
-    isolatedWidgets: 0
-  })
-
-  useEffect(() => {
+export const ConnectionStats = memo(function ConnectionStats({ connections, widgets, className }: ConnectionStatsProps) {
+  const stats = useMemo(() => {
     const connectedWidgetIds = new Set<string>()
     
     connections.forEach(conn => {
@@ -22,11 +16,11 @@ export function ConnectionStats({ connections, widgets, className }: ConnectionS
       connectedWidgetIds.add(conn.to.widgetId)
     })
 
-    setStats({
+    return {
       totalConnections: connections.length,
       connectedWidgets: connectedWidgetIds.size,
       isolatedWidgets: widgets.length - connectedWidgetIds.size
-    })
+    }
   }, [connections, widgets])
 
   if (connections.length === 0) return null
@@ -46,4 +40,4 @@ export function ConnectionStats({ connections, widgets, className }: ConnectionS
       </div>
     </div>
   )
-}
+})

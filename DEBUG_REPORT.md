@@ -35,6 +35,14 @@
    - **Problem**: ESLint v9 requires new config format
    - **Fix**: Created `eslint.config.js` with proper TypeScript and React configuration
 
+7. **React Infinite Render Loop (Maximum Update Depth Exceeded)**
+   - **Problem**: LMStudioWidget causing "Maximum update depth exceeded" error due to circular state updates
+   - **Fix**:
+     - Removed circular dependency between `selectedModel` and `modelName` state
+     - Simplified Select component to use `modelName` directly with `setModelName`
+     - Disabled `autoResizeWidget` effect that was causing recursive parent-child updates
+     - Fixed corrupted import statement in LMStudioWidget.tsx
+
 ### ✅ **Verification Tests Passed:**
 
 - ✅ **Dependencies Install**: All packages installed successfully
@@ -43,13 +51,16 @@
 - ✅ **Production Build**: Builds successfully (`npm run build`)
 - ✅ **Hot Module Replacement**: Working correctly
 - ✅ **ESLint**: Running with only minor warnings (no errors)
+- ✅ **React Infinite Loop**: Fixed and no longer causing crashes
 
 ### ⚠️ **Minor Warnings Remaining:**
+
 - Some unused variables in components (marked with `@typescript-eslint/no-unused-vars`)
 - Some `any` types that could be more specific
 - React refresh warnings for utility exports in UI components
 
 ### 🎯 **Current Status:**
+
 - **App is fully functional** ✅
 - **Development environment working** ✅
 - **Build process working** ✅

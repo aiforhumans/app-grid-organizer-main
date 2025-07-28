@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Robot, Play, Square, CircleNotch } from '@phosphor-icons/react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Robot, Play, Square, CircleNotch, ArrowsClockwise } from '@phosphor-icons/react'
 import { Widget } from '@/hooks/use-grid-system'
 
 interface LMStudioWidgetProps {
@@ -22,6 +23,7 @@ export function LMStudioWidget({ widget, updateWidget, autoResizeWidget, connect
   const [temperature, setTemperature] = useState(widget.data?.temperature || 0.7)
   const [maxTokens, setMaxTokens] = useState(widget.data?.maxTokens || 500)
   const [modelName, setModelName] = useState(widget.data?.modelName || '')
+  const [availableModels, setAvailableModels] = useState<Array<{id: string, object: string}>>([])
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('disconnected')
   
   const lastSavedData = useRef({
@@ -37,16 +39,28 @@ export function LMStudioWidget({ widget, updateWidget, autoResizeWidget, connect
   const effectivePrompt = connectedInputs.prompt !== undefined ? connectedInputs.prompt : prompt
   const hasConnectedPrompt = connectedInputs.prompt !== undefined
 
-  // Auto-resize based on content
+  // Only get the selected model when available models change
   useEffect(() => {
-    if (autoResizeWidget) {
-      const baseHeight = 350 // Base height for all controls
-      const responseHeight = response ? Math.min(200, response.split('\n').length * 20) : 60
-      autoResizeWidget(baseHeight + responseHeight)
+    if (availableModels.length === 0) return;
+    
+    // If current model exists in available models, keep using it
+    if (modelName && availableModels.find(m => m.id === modelName)) {
+      return;
     }
-  }, [response, autoResizeWidget])
+    
+    // Otherwise, use first available model
+    setModelName(availableModels[0]?.id || '');
+  }, [availableModels])
 
-  // Check LM Studio connection
+  // Auto-resize based on content (temporarily disabled to prevent infinite parent updates)
+  // useEffect(() => {
+  //   if (!autoResizeWidget) return
+  //   const baseHeight = 350 // Base height for all controls
+  //   const responseHeight = response ? Math.min(200, response.split('\n').length * 20) : 60
+  //   autoResizeWidget(baseHeight + responseHeight)
+  // }, [response])
+
+  // Check LM Studio connection and fetch models
   useEffect(() => {
     const checkConnection = async () => {
       setConnectionStatus('checking')
@@ -59,14 +73,27 @@ export function LMStudioWidget({ widget, updateWidget, autoResizeWidget, connect
         if (response.ok) {
           const data = await response.json()
           setConnectionStatus('connected')
+          
           if (data.data && data.data.length > 0) {
-            setModelName(data.data[0].id)
+            setAvailableModels(prev => {
+              // Only update if the models actually changed
+              const newModels = data.data
+              if (JSON.stringify(prev) === JSON.stringify(newModels)) {
+                return prev
+              }
+              
+              return newModels
+            })
+          } else {
+            setAvailableModels([])
           }
         } else {
           setConnectionStatus('disconnected')
+          setAvailableModels([])
         }
       } catch (error) {
         setConnectionStatus('disconnected')
+        setAvailableModels([])
       }
     }
 
@@ -96,6 +123,30 @@ export function LMStudioWidget({ widget, updateWidget, autoResizeWidget, connect
 
     return () => clearTimeout(timeoutId)
   }, [effectivePrompt, response, serverUrl, temperature, maxTokens, modelName, widget.id, updateWidget])
+
+  const refreshModels = useCallback(async () => {
+    try {
+      const response = await fetch(`${serverUrl}/v1/models`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.data && data.data.length > 0) {
+          setAvailableModels(prev => {
+            // Only update if models actually changed
+            if (JSON.stringify(prev) === JSON.stringify(data.data)) {
+              return prev
+            }
+            return data.data
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing models:', error)
+    }
+  }, [serverUrl])
 
   const sendToLMStudio = async () => {
     if (!effectivePrompt.trim() || connectionStatus !== 'connected') return
@@ -177,6 +228,42 @@ export function LMStudioWidget({ widget, updateWidget, autoResizeWidget, connect
           className="h-7 text-xs"
         />
       </div>
+
+      {/* Model Selection */}
+      {connectionStatus === 'connected' && availableModels.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-medium">Model</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={refreshModels}
+              className="h-6 w-6 p-0"
+              title="Refresh models list"
+            >
+              <ArrowsClockwise className="w-3 h-3" />
+            </Button>
+          </div>
+          <Select 
+            value={modelName} 
+            onValueChange={setModelName}
+          >
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder="Select a model" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableModels.map((model) => (
+                <SelectItem key={model.id} value={model.id} className="text-xs">
+                  {model.id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="text-xs text-muted-foreground">
+            {availableModels.length} model{availableModels.length !== 1 ? 's' : ''} available
+          </div>
+        </div>
+      )}
 
       {/* Model Settings */}
       <div className="grid grid-cols-2 gap-2">
@@ -264,12 +351,6 @@ export function LMStudioWidget({ widget, updateWidget, autoResizeWidget, connect
           {response || 'Response will appear here...'}
         </div>
       </div>
-
-      {modelName && (
-        <div className="text-xs text-muted-foreground">
-          Model: {modelName}
-        </div>
-      )}
     </div>
   )
 }
